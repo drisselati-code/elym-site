@@ -1,0 +1,21 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Redirection — ELYM</title>
+<meta name="robots" content="noindex">
+<script>
+  // Capture du path demandé pour que la SPA ELYM ouvre la bonne page
+  try {
+    sessionStorage.setItem('elym_redirect', window.location.pathname + window.location.search);
+  } catch(e){}
+  window.location.replace('/');
+</script>
+<meta http-equiv="refresh" content="0;url=/">
+<style>body{font-family:system-ui;padding:40px;text-align:center;color:#13342B;}a{color:#13342B;}</style>
+</head>
+<body>
+<p>Redirection en cours vers <a href="/">elym.pro</a>…</p>
+</body>
+</html>

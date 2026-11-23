@@ -2346,8 +2346,36 @@ footer.site-footer{
 </footer>
 
 <script>
-// ---- SPA Navigation ----
-function navigate(name){
+// ---- SPA Navigation + SEO ----
+const PAGE_META = {
+  accueil:    { slug:'',                 title:'ELYM — Conseil RSE & Développement durable',                  description:"ELYM — cabinet indépendant de conseil RSE. Bilan Carbone®, CSRD, EcoVadis, décarbonation et notre simulateur FLASH CARBON gratuit." },
+  cabinet:    { slug:'cabinet',          title:'Cabinet ELYM — Conseil RSE indépendant',                       description:"Découvrez ELYM, cabinet indépendant de conseil RSE. Équipe, valeurs et engagement pour accompagner les entreprises dans leur transition durable." },
+  offre:      { slug:'nos-offres',       title:'Nos offres RSE — Bilan Carbone, CSRD, EcoVadis | ELYM',        description:"Diagnostic, Bilan Carbone®, CSRD, EcoVadis, décarbonation SBTi, direction RSE externalisée, communication responsable. Toutes les prestations ELYM." },
+  methode:    { slug:'methode',          title:'Notre méthode — Conseil RSE opérationnel | ELYM',              description:"La méthode ELYM : diagnostic, feuille de route 18 mois, accompagnement opérationnel. Un conseil RSE pragmatique et orienté résultats." },
+  secteurs:   { slug:'secteurs',         title:"Secteurs d'intervention — Conseil RSE | ELYM",                 description:"ELYM intervient dans l'industrie, la construction, l'énergie, la logistique, les services, l'agro-alimentaire et le numérique." },
+  references: { slug:'references',       title:'Références clients — Missions RSE réalisées | ELYM',           description:"Découvrez les missions RSE menées par ELYM : industrie, construction, énergie, services. Résultats concrets, références vérifiables." },
+  simulateur: { slug:'flash-carbon',     title:'FLASH CARBON — Simulateur bilan carbone gratuit | ELYM',       description:"Simulateur gratuit FLASH CARBON : votre empreinte carbone estimée en 5 minutes, trajectoire SBTi et benchmark sectoriel personnalisé." },
+  contact:    { slug:'contact',          title:'Contact — ELYM Conseil RSE',                                   description:"Contactez ELYM pour échanger sur vos enjeux RSE : Bilan Carbone, CSRD, EcoVadis, décarbonation. Réponse sous 48 h." },
+  legal:      { slug:'mentions-legales', title:'Mentions légales & RGPD — ELYM',                               description:"Mentions légales du site elym.pro et politique de confidentialité RGPD d'ELYM." }
+};
+const SLUG_TO_PAGE = Object.fromEntries(Object.entries(PAGE_META).map(([k,v])=>[v.slug,k]));
+
+function updateSEO(name){
+  const meta = PAGE_META[name]; if(!meta) return;
+  document.title = meta.title;
+  const setMeta = (sel, content) => { const el = document.querySelector(sel); if(el) el.setAttribute('content', content); };
+  setMeta('meta[name="description"]', meta.description);
+  setMeta('meta[property="og:title"]', meta.title);
+  setMeta('meta[property="og:description"]', meta.description);
+  setMeta('meta[property="og:url"]', 'https://elym.pro/' + meta.slug);
+  // canonical
+  let canon = document.querySelector('link[rel="canonical"]');
+  if(!canon){ canon = document.createElement('link'); canon.setAttribute('rel','canonical'); document.head.appendChild(canon); }
+  canon.setAttribute('href', 'https://elym.pro/' + meta.slug);
+}
+
+function navigate(name, opts){
+  opts = opts || {};
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const target = document.querySelector('.page[data-page="'+name+'"]');
   if(target) target.classList.add('active');
@@ -2356,6 +2384,12 @@ function navigate(name){
   if(navLink) navLink.classList.add('active');
   window.scrollTo({top:0, behavior:'instant'});
   document.querySelector('.nav-links').classList.remove('open');
+  updateSEO(name);
+  if(!opts.replace && !opts.fromPopstate){
+    const slug = PAGE_META[name] ? PAGE_META[name].slug : '';
+    const url = '/' + slug;
+    history.pushState({page:name}, '', url);
+  }
 }
 document.addEventListener('click', function(e){
   const el = e.target.closest('[data-page]:not(.page)');
@@ -2364,6 +2398,22 @@ document.addEventListener('click', function(e){
     navigate(el.getAttribute('data-page'));
   }
 });
+window.addEventListener('popstate', function(e){
+  const path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+  const name = SLUG_TO_PAGE[path] || 'accueil';
+  navigate(name, {fromPopstate:true});
+});
+// Chargement initial : lire URL ou sessionStorage (depuis 404.html)
+(function(){
+  let path = window.location.pathname.replace(/^\/+|\/+$/g, '');
+  try {
+    const redirect = sessionStorage.getItem('elym_redirect');
+    if(redirect){ sessionStorage.removeItem('elym_redirect'); path = redirect.replace(/^\/+|\/+$/g, ''); }
+  } catch(e){}
+  const name = SLUG_TO_PAGE[path] || 'accueil';
+  if(name !== 'accueil' || path){ navigate(name, {replace:true}); history.replaceState({page:name}, '', '/' + PAGE_META[name].slug); }
+  else { updateSEO('accueil'); history.replaceState({page:'accueil'}, '', '/'); }
+})();
 
 // ---- FLASH CARBON ----
 const state = {step:1, sector:null, employees:null, revenue:null, year:'2025', elec:null, gaz:null, fioul:null, surface:null, building:null, elec_source:'reseau', vehicles:null, motor:null, km:null, vtype:'vp', commute_km:null, commute_mode:'voiture', flights_short:null, flights_long:null, train:null, hotels:null, purchases:null, goods:null, it:null, hosting:null, waste:null, waste_level:'partiel'};
